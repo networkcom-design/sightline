@@ -1,0 +1,42 @@
+# Definicion del servicio para Render.
+#
+# Con este archivo en la raiz del repositorio, Render lo detecta al conectar el
+# proyecto y arma todo solo. Las variables marcadas con sync: false NO se
+# escriben aca: se cargan a mano en el panel, porque son secretos y este archivo
+# va al repositorio.
+services:
+  - type: web
+    name: lupa-api
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /actuator/health
+
+    envVars:
+      # Cadena de conexion de Neon. Formato:
+      # jdbc:postgresql://HOST/DB?sslmode=require
+      # Neon la entrega como URL de psql: hay que pasarla a formato JDBC y
+      # separar usuario y contrasena, que van en sus propias variables.
+      - key: LUPA_DB_URL
+        sync: false
+      - key: LUPA_DB_USER
+        sync: false
+      - key: LUPA_DB_PASSWORD
+        sync: false
+
+      # Se genera sola y queda guardada. No hace falta inventarla ni copiarla
+      # de ningun lado, y no es la misma que la de desarrollo.
+      - key: LUPA_JWT_SECRET
+        generateValue: true
+
+      - key: LUPA_GEMINI_API_KEY
+        sync: false
+
+      # El dominio del frontend en Netlify. Sin esto el navegador bloquea todas
+      # las llamadas por CORS y la aplicacion parece rota sin dar ninguna pista.
+      - key: LUPA_CORS_ORIGENES
+        sync: false
+
+      # Render inyecta el puerto por su cuenta; la aplicacion lo lee de aca.
+      - key: LUPA_PUERTO
+        value: 8080

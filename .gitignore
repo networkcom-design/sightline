@@ -1,0 +1,24 @@
+# Compilado
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Secretos: nada de esto va al repositorio.
+# La clave de Gemini y la contrasena de la base viajan como variables de
+# entorno en la plataforma de despliegue, nunca en un archivo versionado.
+.env
+.env.*
+*.key
+application-local.yml
+application-local.yaml
+
+# Entornos de desarrollo
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Sistema
+.DS_Store
+Thumbs.db

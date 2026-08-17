@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: lupa-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lupa
+      POSTGRES_USER: lupa
+      POSTGRES_PASSWORD: lupa
+    # Se publica en 5433 y no en 5432 a proposito: el PostgreSQL local de la
+    # maquina ya ocupa el puerto por defecto y ahi vive la base de Boostify.
+    ports:
+      - "5433:5432"
+    volumes:
+      - lupa-datos:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lupa -d lupa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  lupa-datos:

@@ -1,0 +1,33 @@
+# Perfil de pruebas: base en memoria, sin Docker ni PostgreSQL.
+#
+# Flyway queda apagado y el esquema lo genera Hibernate. La migracion real usa
+# un indice funcional sobre LOWER(email), que es propio de PostgreSQL, asi que
+# correrla contra H2 solo probaria que H2 la tolera, no que el esquema de
+# produccion esta bien.
+spring:
+  datasource:
+    url: jdbc:h2:mem:lupa;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+lupa:
+  jwt:
+    secreto: clave-de-pruebas-suficientemente-larga-para-firmar-con-hs256
+    duracion-horas: 1
+  cors:
+    origenes: http://localhost:5174
+  ia:
+    # En pruebas nunca se llama a un modelo real: el proveedor sin configurar
+    # falla y las señales caen al cuestionario, que es justo lo que se verifica.
+    api-key: ""
+    modelo: gemini-2.5-flash
+    tiempo-limite-segundos: 5
