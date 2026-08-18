@@ -3,7 +3,7 @@ package com.networkcom.lupa.domain.auditoria;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * Las siete dimensiones que mide Lupa.
+ * Las siete dimensiones que mide Sightline.
  *
  * El peso define cuanto influye cada una en el puntaje global. No son iguales
  * a proposito: la ficha de Google es donde un comercio local pierde clientes

@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Configuración del proveedor de IA.
  *
  * La clave se deja vacía por defecto para que el proyecto arranque recién
- * clonado. Sin clave, Lupa funciona igual: las señales que iba a dictaminar la
+ * clonado. Sin clave, Sightline funciona igual: las señales que iba a dictaminar la
  * IA caen al cuestionario manual.
  */
 @ConfigurationProperties(prefix = "lupa.ia")

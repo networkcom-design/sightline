@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * Analiza de verdad el sitio del comercio: lo baja, lo mide y lo revisa.
  *
- * Esta es la única parte de Lupa que no necesita que nadie conteste nada. Todo
+ * Esta es la única parte de Sightline que no necesita que nadie conteste nada. Todo
  * lo que devuelve son hechos medidos, no percepciones.
  */
 @Component
@@ -37,7 +37,7 @@ public class AnalizadorSitioWeb {
 
     /** Un navegador declarado de verdad: muchos hostings rechazan agentes vacíos. */
     private static final String AGENTE =
-            "Mozilla/5.0 (compatible; LupaBot/1.0; +https://networkcom.com.ar/lupa)";
+            "Mozilla/5.0 (compatible; SightlineBot/1.0; +https://networkcom.com.ar/sightline)";
 
     public record Resultado(MedicionSitio medicion, Map<Senal, EstadoSenal> senales) {
     }

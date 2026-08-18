@@ -148,7 +148,7 @@ public class ServicioAuditorias {
      * Arma el mensaje para mandarle el diagnóstico al prospecto.
      *
      * No manda nada: devuelve el texto y los enlaces para que el auditor abra
-     * WhatsApp o su correo y apriete enviar. Lupa no tiene ni necesita permiso
+     * WhatsApp o su correo y apriete enviar. Sightline no tiene ni necesita permiso
      * para escribirle a nadie en nombre de otro.
      */
     @Transactional(readOnly = true)

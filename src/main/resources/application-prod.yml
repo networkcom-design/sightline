@@ -1,0 +1,54 @@
+# Produccion.
+#
+# Ninguna variable sensible tiene valor por defecto, y eso es deliberado. Si
+# falta una, Spring no arranca y lo dice en el log.
+#
+# La alternativa —dejar el valor de desarrollo como respaldo— es peor de lo que
+# parece: la aplicacion levantaria firmando los tokens con una clave que esta
+# publicada en el repositorio, sin que nadie se entere. Fallar al arrancar se
+# nota en el primer despliegue; una clave de desarrollo en produccion no se
+# nota nunca.
+spring:
+  datasource:
+    # La direccion se arma con las piezas que inyecta Render desde la base
+    # declarada en render.yaml. Asi nadie tiene que traducir a mano la cadena
+    # de psql al formato de JDBC, que es donde se cae la mitad de los
+    # despliegues: se olvida el jdbc: adelante, o se deja un parametro que el
+    # driver de Java no entiende.
+    #
+    # LUPA_DB_URL sigue funcionando y tiene prioridad, por si algun dia la base
+    # se muda a otro proveedor y hay que pasar la direccion entera.
+    url: ${LUPA_DB_URL:jdbc:postgresql://${LUPA_DB_HOST}:${LUPA_DB_PORT}/${LUPA_DB_NAME}?sslmode=require}
+    username: ${LUPA_DB_USER}
+    password: ${LUPA_DB_PASSWORD}
+
+    hikari:
+      # El plan gratuito de Neon no da para muchas conexiones abiertas, y un
+      # servicio chico tampoco las necesita.
+      maximum-pool-size: 5
+      # Neon cierra las conexiones ociosas por su cuenta: conviene soltarlas
+      # antes de que las corte del otro lado.
+      idle-timeout: 120000
+      max-lifetime: 300000
+
+server:
+  # Render decide el puerto y lo pasa en PORT. Ignorarlo hace que el servicio
+  # quede escuchando donde nadie lo busca y el despliegue falle por
+  # "no open ports detected".
+  port: ${PORT:8080}
+
+lupa:
+  jwt:
+    secreto: ${LUPA_JWT_SECRET}
+    duracion-horas: ${LUPA_JWT_HORAS:12}
+  cors:
+    origenes: ${LUPA_CORS_ORIGENES}
+  ia:
+    api-key: ${LUPA_GEMINI_API_KEY:}
+    modelo: ${LUPA_GEMINI_MODELO:gemini-3.1-flash-lite}
+    tiempo-limite-segundos: ${LUPA_IA_TIMEOUT:30}
+
+logging:
+  level:
+    root: INFO
+    com.networkcom.lupa: INFO

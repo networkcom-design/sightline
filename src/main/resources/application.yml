@@ -1,48 +1,30 @@
+# Configuracion comun a todos los entornos.
+#
+# Lo que cambia entre tu maquina y produccion vive en application-local.yml y
+# application-prod.yml. Aca no hay ninguna direccion, ninguna clave y ningun
+# valor que dependa de donde este corriendo.
 spring:
   application:
     name: lupa
 
-  datasource:
-    url: ${LUPA_DB_URL:jdbc:postgresql://localhost:5433/lupa}
-    username: ${LUPA_DB_USER:lupa}
-    password: ${LUPA_DB_PASSWORD:lupa}
+  profiles:
+    # Sin decir nada se trabaja en local. Render activa "prod" explicitamente.
+    default: local
 
   jpa:
     hibernate:
       # El esquema lo maneja Flyway. Hibernate solo verifica que coincida.
       ddl-auto: validate
     open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
 
   flyway:
     enabled: true
     locations: classpath:db/migration
 
 server:
-  port: ${LUPA_PUERTO:8080}
   error:
     include-message: never
     include-stacktrace: never
-
-lupa:
-  jwt:
-    # En produccion se define por variable de entorno. El valor de desarrollo
-    # esta aca solo para que el proyecto arranque recien clonado.
-    secreto: ${LUPA_JWT_SECRET:desarrollo-local-lupa-clave-de-firma-hs256-no-usar-en-produccion}
-    duracion-horas: ${LUPA_JWT_HORAS:12}
-  cors:
-    origenes: ${LUPA_CORS_ORIGENES:http://localhost:5175,http://localhost:4173}
-  ia:
-    # Sin clave, Lupa funciona igual: lo que iba a dictaminar la IA cae al
-    # cuestionario manual. Nunca se inventa una respuesta.
-    api-key: ${LUPA_GEMINI_API_KEY:}
-    # gemini-2.5-flash devuelve 429 todo el tiempo: su capa gratuita permite
-    # 5 consultas por minuto y 20 por dia, y una sola auditoria usa 3.
-    # El modelo lite responde mas rapido y tiene limites mas holgados.
-    modelo: ${LUPA_GEMINI_MODELO:gemini-3.1-flash-lite}
-    tiempo-limite-segundos: ${LUPA_IA_TIMEOUT:30}
 
 management:
   endpoints:

@@ -35,7 +35,8 @@ public class ServicioJwt {
         if (bytes.length < LARGO_MINIMO_SECRETO) {
             throw new IllegalStateException(
                     "El secreto de firma JWT necesita al menos " + LARGO_MINIMO_SECRETO
-                            + " caracteres. Configura lupa_JWT_SECRET con un valor mas largo.");
+                            + " caracteres y tiene " + bytes.length
+                            + ". Defini la variable de entorno LUPA_JWT_SECRET.");
         }
 
         this.clave = Keys.hmacShaKeyFor(bytes);

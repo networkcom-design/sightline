@@ -1,42 +1,71 @@
-# Definicion del servicio para Render.
+# Todo el despliegue del backend en un solo archivo.
 #
-# Con este archivo en la raiz del repositorio, Render lo detecta al conectar el
-# proyecto y arma todo solo. Las variables marcadas con sync: false NO se
-# escriben aca: se cargan a mano en el panel, porque son secretos y este archivo
-# va al repositorio.
+# Render lee esto al conectar el repositorio y crea las dos cosas: la base de
+# datos y el servicio. Las credenciales de la base las inyecta el solo, con
+# fromDatabase: no hay que copiar ninguna cadena de conexion a mano ni entender
+# como se arma.
+#
+# Lo unico que se carga a mano son las dos variables marcadas con sync: false,
+# porque son secretos que Render no puede adivinar.
+
+databases:
+  - name: sightline-db
+    plan: free
+    region: ohio
+    databaseName: sightline
+    user: sightline
+
 services:
   - type: web
-    name: lupa-api
+    name: sightline-api
     runtime: docker
     plan: free
-    region: oregon
+    # Misma region que la base: si quedan separadas, cada consulta viaja de mas.
+    region: ohio
     healthCheckPath: /actuator/health
 
     envVars:
-      # Cadena de conexion de Neon. Formato:
-      # jdbc:postgresql://HOST/DB?sslmode=require
-      # Neon la entrega como URL de psql: hay que pasarla a formato JDBC y
-      # separar usuario y contrasena, que van en sus propias variables.
-      - key: LUPA_DB_URL
-        sync: false
-      - key: LUPA_DB_USER
-        sync: false
-      - key: LUPA_DB_PASSWORD
-        sync: false
+      # Activa application-prod.yml. Sin esto arranca con el perfil local, que
+      # apunta a una base en localhost que en Render no existe.
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
 
-      # Se genera sola y queda guardada. No hace falta inventarla ni copiarla
-      # de ningun lado, y no es la misma que la de desarrollo.
+      # Las cinco piezas de la conexion salen de la base declarada arriba.
+      # Se toman por separado y no como cadena completa a proposito: la cadena
+      # que da Render viene en formato de psql y habria que traducirla a JDBC.
+      - key: LUPA_DB_HOST
+        fromDatabase:
+          name: sightline-db
+          property: host
+      - key: LUPA_DB_PORT
+        fromDatabase:
+          name: sightline-db
+          property: port
+      - key: LUPA_DB_NAME
+        fromDatabase:
+          name: sightline-db
+          property: database
+      - key: LUPA_DB_USER
+        fromDatabase:
+          name: sightline-db
+          property: user
+      - key: LUPA_DB_PASSWORD
+        fromDatabase:
+          name: sightline-db
+          property: password
+
+      # Se genera sola y queda guardada. No es la misma que la de desarrollo.
       - key: LUPA_JWT_SECRET
         generateValue: true
 
+      # --- Lo unico que hay que cargar a mano ---
+
+      # Tu clave de Google AI Studio.
       - key: LUPA_GEMINI_API_KEY
         sync: false
 
-      # El dominio del frontend en Netlify. Sin esto el navegador bloquea todas
-      # las llamadas por CORS y la aplicacion parece rota sin dar ninguna pista.
+      # El dominio del frontend en Netlify, con https y sin barra al final.
+      # Sin esto el navegador bloquea todas las llamadas por CORS y la
+      # aplicacion parece rota sin dar ninguna pista.
       - key: LUPA_CORS_ORIGENES
         sync: false
-
-      # Render inyecta el puerto por su cuenta; la aplicacion lo lee de aca.
-      - key: LUPA_PUERTO
-        value: 8080

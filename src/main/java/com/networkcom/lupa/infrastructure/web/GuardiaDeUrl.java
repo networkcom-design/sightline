@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * Protege al servidor de que le hagan pedir direcciones que no debería.
  *
- * Lupa baja el sitio que le indica el usuario, y eso es una puerta abierta:
+ * Sightline baja el sitio que le indica el usuario, y eso es una puerta abierta:
  * alguien podría pasar `http://localhost:8080/actuator` o una IP interna de la
  * red y usar el servidor como intermediario para alcanzar cosas que desde
  * afuera no se ven. Es el ataque conocido como SSRF.
