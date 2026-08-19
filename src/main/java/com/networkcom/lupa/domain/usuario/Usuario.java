@@ -10,7 +10,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Un usuario de lupa, que en la practica es un DT o un cuerpo tecnico.
+ * Un usuario de Sightline, que en la practica es quien audita: alguien de la
+ * agencia, no el comercio auditado.
  *
  * La entidad nunca guarda la contrasena en claro: recibe y expone unicamente el
  * hash. Quien la calcula es la capa de aplicacion, porque el algoritmo de
