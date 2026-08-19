@@ -23,11 +23,13 @@ spring:
     password: ${LUPA_DB_PASSWORD}
 
     hikari:
-      # El plan gratuito de Neon no da para muchas conexiones abiertas, y un
-      # servicio chico tampoco las necesita.
+      # El plan gratuito de Render admite pocas conexiones simultaneas, y un
+      # servicio de un solo usuario tampoco necesita mas.
       maximum-pool-size: 5
-      # Neon cierra las conexiones ociosas por su cuenta: conviene soltarlas
-      # antes de que las corte del otro lado.
+      # Las bases administradas cortan las conexiones ociosas por su cuenta.
+      # Conviene soltarlas antes: si el pool entrega una conexion que el otro
+      # extremo ya cerro, la peticion falla con un error de red que no dice
+      # nada y no se repite al reintentar.
       idle-timeout: 120000
       max-lifetime: 300000
 

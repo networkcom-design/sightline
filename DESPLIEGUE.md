@@ -10,27 +10,20 @@ y la conecta al backend por su cuenta.
 
 ## Antes de empezar
 
-Los dos repositorios tienen que estar en GitHub. Ya están inicializados y con el
-commit hecho; falta crearlos y subirlos:
+Los dos repositorios ya están en GitHub:
 
-```bash
-gh repo create sightline --private --source=. --push
-```
+- Backend: [networkcom-design/sightline](https://github.com/networkcom-design/sightline)
+- Frontend: [networkcom-design/sightline-front](https://github.com/networkcom-design/sightline-front)
 
-Si no tenés `gh`, creá el repositorio desde la web y después:
-
-```bash
-git remote add origin https://github.com/TU-USUARIO/sightline.git
-git push -u origin main
-```
-
-Lo mismo con el frontend. Antes de subir, verificá que no se cuele nada:
+Render y Netlify despliegan cada vez que llega un commit a `main`, así que antes
+de subir conviene verificar que no se cuele ningún secreto:
 
 ```bash
 git ls-files | findstr /i "env key"
 ```
 
-No tiene que devolver nada.
+No tiene que devolver nada. Si devuelve algo, no subas: revisá el `.gitignore`
+primero.
 
 ---
 
