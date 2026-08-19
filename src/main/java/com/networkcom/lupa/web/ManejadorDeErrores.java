@@ -1,6 +1,7 @@
 package com.networkcom.lupa.web;
 
 import com.networkcom.lupa.application.auditoria.ServicioAuditorias;
+import com.networkcom.lupa.domain.auditoria.Auditoria;
 import com.networkcom.lupa.domain.auditoria.AuditoriaNoEncontradaException;
 import com.networkcom.lupa.domain.usuario.CredencialesInvalidasException;
 import com.networkcom.lupa.domain.usuario.EmailYaRegistradoException;
@@ -58,6 +59,35 @@ public class ManejadorDeErrores {
     public ProblemDetail informeIncompleto(ServicioAuditorias.InformeIncompletoException e) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Informe incompleto");
+        problema.setDetail(e.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(Auditoria.PropuestaCerradaException.class)
+    public ProblemDetail propuestaCerrada(Auditoria.PropuestaCerradaException e) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Propuesta cerrada");
+        problema.setDetail(e.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(ServicioAuditorias.SinTrabajoContratadoException.class)
+    public ProblemDetail sinTrabajoContratado(ServicioAuditorias.SinTrabajoContratadoException e) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Sin trabajo contratado");
+        problema.setDetail(e.getMessage());
+        return problema;
+    }
+
+    /**
+     * Una regla del dominio que no se cumplio: aceptar una propuesta vacia,
+     * rechazar sin motivo. Son errores del pedido, no fallas del servidor, y
+     * sin este manejador saldrian como 500 con el mensaje escondido en el log.
+     */
+    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
+    public ProblemDetail reglaDelDominio(RuntimeException e) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problema.setTitle("Operacion no permitida");
         problema.setDetail(e.getMessage());
         return problema;
     }

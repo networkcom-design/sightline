@@ -10,12 +10,16 @@ import com.networkcom.lupa.domain.auditoria.MotorDePuntaje;
 import com.networkcom.lupa.domain.auditoria.NivelPresencia;
 import com.networkcom.lupa.domain.auditoria.OrigenDeRespuesta;
 import com.networkcom.lupa.domain.auditoria.Senal;
+import com.networkcom.lupa.domain.propuesta.EstadoTarea;
 import com.networkcom.lupa.domain.propuesta.GeneradorDePropuesta;
+import com.networkcom.lupa.domain.propuesta.TareaContratada;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /** Todo lo que la API devuelve sobre auditorías. */
 public final class RespuestasAuditoria {
@@ -34,7 +38,9 @@ public final class RespuestasAuditoria {
             EstadoAuditoria estado,
             int senalesRespondidas,
             int senalesTotales,
-            Instant creadaEn) {
+            Instant creadaEn,
+            /** Cuánto del trabajo contratado está entregado. Cero si no hay trato cerrado. */
+            int avance) {
 
         public static Resumen de(Auditoria auditoria) {
             var resultado = MotorDePuntaje.calcular(auditoria.respuestasParaElMotor());
@@ -48,7 +54,8 @@ public final class RespuestasAuditoria {
                     auditoria.getEstado(),
                     auditoria.getRespuestas().size(),
                     Senal.values().length,
-                    auditoria.getCreadaEn());
+                    auditoria.getCreadaEn(),
+                    auditoria.avanceDelTrabajo());
         }
     }
 
@@ -162,6 +169,76 @@ public final class RespuestasAuditoria {
         }
     }
 
+    /** Una tarea contratada, como la ve el auditor. */
+    public record TareaEnCurso(
+            String codigoServicio,
+            String nombre,
+            BigDecimal precio,
+            String modalidad,
+            int plazoDias,
+            EstadoTarea estado,
+            String estadoEtiqueta,
+            /** Los tres estados con el nombre que les corresponde a esta modalidad. */
+            List<OpcionDeEstado> opciones,
+            boolean cumplida,
+            Instant iniciadaEn,
+            Instant completadaEn,
+            String nota) {
+
+        static TareaEnCurso de(TareaContratada tarea) {
+            List<OpcionDeEstado> opciones = Arrays.stream(EstadoTarea.values())
+                    .map(estado -> new OpcionDeEstado(
+                            estado, TareaContratada.etiquetaDe(estado, tarea.getModalidad())))
+                    .toList();
+
+            return new TareaEnCurso(
+                    tarea.getCodigoServicio(),
+                    tarea.getNombre(),
+                    tarea.getPrecio(),
+                    tarea.getModalidad().name(),
+                    tarea.getPlazoDias(),
+                    tarea.getEstado(),
+                    tarea.etiquetaDeEstado(),
+                    opciones,
+                    tarea.estaCumplida(),
+                    tarea.getIniciadaEn(),
+                    tarea.getCompletadaEn(),
+                    tarea.getNota());
+        }
+    }
+
+    public record OpcionDeEstado(EstadoTarea estado, String etiqueta) {
+    }
+
+    /**
+     * El estado del trabajo después de que el cliente respondió.
+     *
+     * Los totales salen de las tareas y no del generador de propuestas: son los
+     * precios congelados el día que se aceptó, que es lo que hay que cobrar.
+     */
+    public record Seguimiento(
+            List<TareaEnCurso> tareas,
+            int avance,
+            BigDecimal totalUnicoContratado,
+            BigDecimal totalMensualContratado,
+            Instant aceptadaEn,
+            Instant rechazadaEn,
+            String motivoRechazo,
+            Instant entregadaEn) {
+
+        public static Seguimiento de(Auditoria auditoria) {
+            return new Seguimiento(
+                    auditoria.getTareas().stream().map(TareaEnCurso::de).toList(),
+                    auditoria.avanceDelTrabajo(),
+                    auditoria.totalContratado(false),
+                    auditoria.totalContratado(true),
+                    auditoria.getAceptadaEn(),
+                    auditoria.getRechazadaEn(),
+                    auditoria.getMotivoRechazo(),
+                    auditoria.getEntregadaEn());
+        }
+    }
+
     /** El informe interno completo. Es lo que ve el auditor, con todo el detalle. */
     public record Informe(
             UUID id,
@@ -187,6 +264,8 @@ public final class RespuestasAuditoria {
             int cobertura,
             boolean provisional,
             Propuesta propuesta,
+            /** Lo contratado y su avance. Nulo mientras el cliente no respondió. */
+            Seguimiento seguimiento,
             /** Por qué el análisis no completó todo. Nulo si salió bien. */
             String avisoDelAnalisis) {
     }
@@ -224,7 +303,40 @@ public final class RespuestasAuditoria {
             int puntajeAlEntregar,
             int puntajeSostenido,
             int plazoDiasEstimado,
-            String auditadoPor) {
+            String auditadoPor,
+            /** El avance del trabajo. Nulo mientras no haya nada contratado. */
+            AvancePublico avance) {
+    }
+
+    /**
+     * Lo que el comercio ve de su propio trabajo en marcha.
+     *
+     * Sin precios y sin fechas de inicio: al cliente le importa qué se está
+     * haciendo y cuánto falta, no cuánto sale cada parte —eso ya lo acordó— ni
+     * qué día se tocó cada botón.
+     */
+    public record AvancePublico(
+            List<String> entregado,
+            List<String> enCurso,
+            List<String> pendiente,
+            int avance,
+            Instant desde) {
+
+        public static AvancePublico de(Auditoria auditoria) {
+            List<TareaContratada> tareas = auditoria.getTareas();
+            return new AvancePublico(
+                    nombresDe(tareas, TareaContratada::estaCumplida),
+                    nombresDe(tareas, tarea -> !tarea.estaCumplida()
+                            && tarea.getEstado() != EstadoTarea.PENDIENTE),
+                    nombresDe(tareas, tarea -> tarea.getEstado() == EstadoTarea.PENDIENTE),
+                    auditoria.avanceDelTrabajo(),
+                    auditoria.getAceptadaEn());
+        }
+
+        private static List<String> nombresDe(List<TareaContratada> tareas,
+                                              Predicate<TareaContratada> filtro) {
+            return tareas.stream().filter(filtro).map(TareaContratada::getNombre).toList();
+        }
     }
 
     /**

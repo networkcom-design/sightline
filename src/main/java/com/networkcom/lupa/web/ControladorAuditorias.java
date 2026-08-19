@@ -6,8 +6,11 @@ import com.networkcom.lupa.application.auditoria.dto.PeticionNuevaAuditoria;
 import com.networkcom.lupa.application.auditoria.dto.RespuestasAuditoria;
 import com.networkcom.lupa.application.mensaje.CanalDeEnvio;
 import com.networkcom.lupa.domain.auditoria.EstadoSenal;
+import com.networkcom.lupa.domain.propuesta.EstadoTarea;
 import com.networkcom.lupa.domain.usuario.Usuario;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -105,6 +108,32 @@ public class ControladorAuditorias {
         return servicio.marcarEnviada(usuario, id);
     }
 
+    /** El cliente aceptó: congela el presupuesto y crea las tareas a seguir. */
+    @PostMapping("/{id}/propuesta/aceptar")
+    public RespuestasAuditoria.Informe aceptarPropuesta(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable UUID id) {
+        return servicio.aceptarPropuesta(usuario, id);
+    }
+
+    @PostMapping("/{id}/propuesta/rechazar")
+    public RespuestasAuditoria.Informe rechazarPropuesta(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable UUID id,
+            @Valid @RequestBody MotivoDeRechazo motivo) {
+        return servicio.rechazarPropuesta(usuario, id, motivo.motivo());
+    }
+
+    /** Mueve una tarea contratada. El estado del expediente se recalcula solo. */
+    @PutMapping("/{id}/tareas/{codigo}")
+    public RespuestasAuditoria.Informe cambiarEstadoDeTarea(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable UUID id,
+            @PathVariable String codigo,
+            @RequestBody CambioDeTarea cambio) {
+        return servicio.cambiarEstadoDeTarea(usuario, id, codigo, cambio.estado(), cambio.nota());
+    }
+
     @PostMapping("/{id}/revisada")
     public RespuestasAuditoria.Informe marcarRevisada(
             @AuthenticationPrincipal Usuario usuario,
@@ -125,5 +154,18 @@ public class ControladorAuditorias {
 
     /** `precio` en nulo vuelve el servicio al valor de lista. */
     public record AjusteDeServicio(boolean incluido, BigDecimal precio) {
+    }
+
+    public record CambioDeTarea(EstadoTarea estado, String nota) {
+    }
+
+    /**
+     * El motivo es obligatorio a propósito: una propuesta perdida sin razón
+     * anotada no le sirve a nadie dentro de tres meses.
+     */
+    public record MotivoDeRechazo(
+            @NotBlank(message = "Anotá por qué no avanzó: es lo que sirve para la próxima.")
+            @Size(max = 400, message = "El motivo no puede pasar de 400 caracteres.")
+            String motivo) {
     }
 }

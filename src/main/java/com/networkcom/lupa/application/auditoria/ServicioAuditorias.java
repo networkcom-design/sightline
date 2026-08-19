@@ -10,11 +10,13 @@ import com.networkcom.lupa.application.mensaje.RedactorDeMensajes;
 import com.networkcom.lupa.domain.contacto.TelefonoArgentino;
 import com.networkcom.lupa.domain.auditoria.Auditoria;
 import com.networkcom.lupa.domain.auditoria.AuditoriaNoEncontradaException;
+import com.networkcom.lupa.domain.auditoria.EstadoAuditoria;
 import com.networkcom.lupa.domain.auditoria.EstadoSenal;
 import com.networkcom.lupa.domain.auditoria.MotorDePuntaje;
 import com.networkcom.lupa.domain.auditoria.RepositorioAuditorias;
 import com.networkcom.lupa.domain.auditoria.Senal;
 import com.networkcom.lupa.domain.propuesta.CatalogoServicios;
+import com.networkcom.lupa.domain.propuesta.EstadoTarea;
 import com.networkcom.lupa.domain.propuesta.GeneradorDePropuesta;
 import com.networkcom.lupa.domain.usuario.Usuario;
 import com.networkcom.lupa.infrastructure.web.AnalizadorSitioWeb;
@@ -190,6 +192,51 @@ public class ServicioAuditorias {
         return armarInforme(repositorio.guardar(auditoria));
     }
 
+    /**
+     * El comercio aceptó el presupuesto.
+     *
+     * La propuesta se recalcula una última vez con los ajustes vigentes y esos
+     * son los precios que quedan pactados. Se exige que el informe esté
+     * completo por la misma razón que el enlace público: un presupuesto armado
+     * sobre un diagnóstico a medias cotiza servicios que quizá no hagan falta.
+     */
+    @Transactional
+    public RespuestasAuditoria.Informe aceptarPropuesta(Usuario usuario, UUID id) {
+        Auditoria auditoria = recuperar(usuario, id);
+
+        if (!auditoria.sinResponder().isEmpty()) {
+            throw new InformeIncompletoException(auditoria.sinResponder().size());
+        }
+
+        var propuesta = GeneradorDePropuesta.generar(
+                auditoria.respuestasParaElMotor(), CatalogoServicios.TODOS, auditoria.getAjustesPropuesta());
+
+        auditoria.aceptarPropuesta(propuesta.items());
+        return armarInforme(repositorio.guardar(auditoria));
+    }
+
+    @Transactional
+    public RespuestasAuditoria.Informe rechazarPropuesta(Usuario usuario, UUID id, String motivo) {
+        Auditoria auditoria = recuperar(usuario, id);
+        auditoria.rechazarPropuesta(motivo);
+        return armarInforme(repositorio.guardar(auditoria));
+    }
+
+    /** Mueve una tarea contratada. El estado del expediente se recalcula solo. */
+    @Transactional
+    public RespuestasAuditoria.Informe cambiarEstadoDeTarea(
+            Usuario usuario, UUID id, String codigoServicio, EstadoTarea estado, String nota) {
+
+        Auditoria auditoria = recuperar(usuario, id);
+
+        if (!auditoria.getEstado().tieneTrabajoContratado()) {
+            throw new SinTrabajoContratadoException();
+        }
+
+        auditoria.cambiarEstadoDeTarea(codigoServicio, estado, nota);
+        return armarInforme(repositorio.guardar(auditoria));
+    }
+
     @Transactional
     public RespuestasAuditoria.Informe marcarRevisada(Usuario usuario, UUID id) {
         Auditoria auditoria = recuperar(usuario, id);
@@ -238,7 +285,10 @@ public class ServicioAuditorias {
                 propuesta.puntajeAlEntregar(),
                 propuesta.puntajeSostenido(),
                 propuesta.plazoDiasEstimado(),
-                auditoria.getUsuario().getNombre());
+                auditoria.getUsuario().getNombre(),
+                auditoria.getEstado().tieneTrabajoContratado()
+                        ? RespuestasAuditoria.AvancePublico.de(auditoria)
+                        : null);
     }
 
     /**
@@ -292,12 +342,25 @@ public class ServicioAuditorias {
                 RespuestasAuditoria.calcularCobertura(auditoria.getRespuestas().size()),
                 !auditoria.sinResponder().isEmpty(),
                 RespuestasAuditoria.Propuesta.de(propuesta),
+                // El seguimiento solo existe una vez que el cliente respondió.
+                // Devolver un bloque vacío obligaría al frontend a distinguir
+                // "sin tareas" de "todavía no se cerró nada", que no es lo mismo.
+                auditoria.getEstado().tieneTrabajoContratado()
+                        || auditoria.getEstado() == EstadoAuditoria.RECHAZADA
+                        ? RespuestasAuditoria.Seguimiento.de(auditoria)
+                        : null,
                 avisoDelAnalisis);
     }
 
     public static class SenalNoEditableException extends RuntimeException {
         public SenalNoEditableException(Senal senal) {
             super("La señal " + senal.name() + " la mide el analizador de sitios y no se puede cambiar a mano.");
+        }
+    }
+
+    public static class SinTrabajoContratadoException extends RuntimeException {
+        public SinTrabajoContratadoException() {
+            super("Todavía no hay nada contratado en esta auditoría. Marcá la propuesta como aceptada primero.");
         }
     }
 
