@@ -8,8 +8,16 @@ target/
 .env
 .env.*
 *.key
-application-local.yml
-application-local.yaml
+
+# application-local.yml SI va al repositorio, aunque el nombre suene a archivo
+# personal. Es la configuracion del perfil local y no tiene ningun secreto: la
+# base corre en Docker con credenciales de juguete y la clave de firma no
+# protege nada real. Sin ese archivo, quien clone el proyecto no puede
+# levantarlo sin antes adivinar como configurarlo.
+#
+# Lo que si queda afuera es cualquier variante personal:
+application-local-*.yml
+application-personal.yml
 
 # Entornos de desarrollo
 .idea/

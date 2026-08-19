@@ -1,0 +1,34 @@
+# Tu maquina.
+#
+# Todo tiene valor por defecto para que el proyecto arranque recien clonado,
+# sin configurar nada. Los valores de aca son publicos a proposito: la base
+# corre en Docker con credenciales de juguete y la clave de firma no protege
+# nada real.
+#
+# Lo unico que no tiene valor util por defecto es la clave de Gemini: sin ella
+# la aplicacion funciona igual, pero el analisis de evidencia cae al
+# cuestionario manual.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/lupa
+    username: lupa
+    password: lupa
+
+server:
+  port: 8080
+
+lupa:
+  jwt:
+    secreto: desarrollo-local-lupa-clave-de-firma-hs256-no-usar-en-produccion
+    duracion-horas: 12
+  cors:
+    origenes: http://localhost:5175,http://localhost:4173
+  ia:
+    api-key: ${LUPA_GEMINI_API_KEY:}
+    modelo: ${LUPA_GEMINI_MODELO:gemini-3.1-flash-lite}
+    tiempo-limite-segundos: 30
+
+logging:
+  level:
+    # En desarrollo interesa ver cuanto tardo cada analisis y por que fallo.
+    com.networkcom.lupa: DEBUG
