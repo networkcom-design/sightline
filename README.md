@@ -12,6 +12,14 @@ termina en algo que se le puede mandar al cliente.
 Este repositorio es la API. El frontend está en
 [sightline-front](https://github.com/networkcom-design/sightline-front).
 
+## Documentación
+
+- **[Guía de uso](documentos/Sightline%20-%20guia-de-uso.pdf)** — 23 páginas, escritas
+  para quien va a usar la herramienta: el recorrido completo, qué significa cada
+  número, las 43 señales y qué hacer cuando algo falla.
+- **[Documento de negocio](documentos/Sightline%20-%20documento-de-negocio.pdf)** —
+  el problema, el modelo, el mercado y los riesgos.
+
 ---
 
 ## Qué hace
