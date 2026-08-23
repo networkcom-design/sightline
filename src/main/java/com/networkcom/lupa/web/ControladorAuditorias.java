@@ -57,6 +57,15 @@ public class ControladorAuditorias {
         return servicio.informe(usuario, id);
     }
 
+    /** Corrige los datos del comercio. Si cambia el sitio, se vuelve a medir. */
+    @PutMapping("/{id}/datos")
+    public RespuestasAuditoria.Informe corregirDatos(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable UUID id,
+            @Valid @RequestBody PeticionNuevaAuditoria peticion) {
+        return servicio.corregirDatos(usuario, id, peticion);
+    }
+
     @PostMapping("/{id}/evidencia")
     public RespuestasAuditoria.Informe analizarEvidencia(
             @AuthenticationPrincipal Usuario usuario,

@@ -150,6 +150,45 @@ public class Auditoria {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    /**
+     * Corrige los datos del comercio después de creada la auditoría.
+     *
+     * Hace falta porque un teléfono mal tipeado o una dirección con un error
+     * obligaba a borrar la auditoría y rehacerla, tirando a la basura los
+     * dictámenes de la IA que ya consumieron cupo.
+     *
+     * Devuelve si cambió el sitio web, que es el único dato del que dependen
+     * mediciones ya hechas: las nueve señales web se midieron contra la
+     * dirección vieja y quedan sin sentido si apunta a otro lado. Quien llama
+     * se ocupa de volver a medir; el dominio no sale a la red.
+     */
+    public boolean corregirDatos(String nombre, String rubro, String ciudad,
+                                 String telefono, String direccion, String sitioWeb) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre del comercio no puede quedar vacío.");
+        }
+        if (rubro == null || rubro.isBlank()) {
+            throw new IllegalArgumentException("El rubro no puede quedar vacío.");
+        }
+
+        boolean cambioElSitio = !Objects.equals(normalizar(this.sitioWeb), normalizar(sitioWeb));
+
+        this.nombre = nombre.trim();
+        this.rubro = rubro.trim();
+        this.ciudad = ciudad;
+        this.telefono = telefono;
+        this.direccion = direccion;
+        this.sitioWeb = sitioWeb;
+        tocar();
+
+        return cambioElSitio;
+    }
+
+    /** Vacío y nulo son lo mismo acá: los dos significan "no tiene sitio". */
+    private static String normalizar(String valor) {
+        return valor == null || valor.isBlank() ? null : valor.trim();
+    }
+
     public void completarDatos(String ciudad, String telefono, String direccion, String sitioWeb) {
         this.ciudad = ciudad;
         this.telefono = telefono;

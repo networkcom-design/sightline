@@ -68,6 +68,32 @@ public class ServicioAuditorias {
         return armarInforme(repositorio.guardar(auditoria));
     }
 
+    /**
+     * Corrige los datos del comercio.
+     *
+     * Si cambió el sitio web se vuelve a medir en el momento. No hacerlo dejaría
+     * nueve señales contestadas sobre una dirección que ya no es la del
+     * comercio: el informe diría que el sitio carga rápido y es seguro, midiendo
+     * uno que no es el suyo. Es peor que no tener el dato.
+     */
+    @Transactional
+    public RespuestasAuditoria.Informe corregirDatos(
+            Usuario usuario, UUID id, PeticionNuevaAuditoria peticion) {
+
+        Auditoria auditoria = recuperar(usuario, id);
+
+        boolean cambioElSitio = auditoria.corregirDatos(
+                peticion.nombre(), peticion.rubro(), peticion.ciudad(),
+                peticion.telefono(), peticion.direccion(), peticion.sitioWeb());
+
+        if (cambioElSitio) {
+            var resultado = analizadorSitio.analizar(peticion.sitioWeb());
+            auditoria.registrarMedicion(resultado.medicion(), resultado.senales());
+        }
+
+        return armarInforme(repositorio.guardar(auditoria));
+    }
+
     @Transactional(readOnly = true)
     public List<RespuestasAuditoria.Resumen> listar(Usuario usuario) {
         return repositorio.deUsuario(usuario).stream().map(RespuestasAuditoria.Resumen::de).toList();
